@@ -43,7 +43,7 @@ services:
   # Remove this section if you want to use Sqlite instead.
   # Word of warning: Sqlite is much slower when it comes to manipulating the DB.
   database:
-    image: 'postgres:latest'
+    image: 'postgres:16.3'
     ports:
       - 5432:5432
     environment:
