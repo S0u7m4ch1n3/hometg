@@ -1,4 +1,5 @@
-version: '3.4'
+
+version: "3.4"
 
 services:
   hometg:
@@ -6,59 +7,60 @@ services:
       context: .
       dockerfile: HomeTG.API/Dockerfile
     pull_policy: build
+    container_name: hometg-api
     ports:
       - "5234:80"
     volumes:
       - /config/hometg:/home/root/.local/share/hometg/DB/hometg
     environment:
-      "ASPNETCORE_ENVIRONMENT": "linux"
-      # Optional way to overwrite database connection.
-      # "ConnectionStrings__Sqlite": "Data Source=/usr/share/hometg/Collection.db"
-      # "provider": "Sqlite"
-      "ConnectionStrings__Postgres": "Host=database;Username=hometg;Password=supersecretpassword;Database=hometg_db"
-      "provider": "Postgres"
+      ASPNETCORE_ENVIRONMENT: linux
+      ConnectionStrings__Postgres: "Host=database;Username=hometg;Password=supersecretpassword;Database=hometg_db"
+      provider: Postgres
+    depends_on:
+      - database
     networks:
       - public
       - private
-    depends_on:
-      - database
-    restart: "unless-stopped"
+    restart: unless-stopped
 
   hometg-react:
     build:
       context: .
       dockerfile: HomeTG.React/Dockerfile
-    environment:
-      REACT_APP_PROXY_HOST: "http://hometg"
-      WDS_SOCKET_PORT: 0
     pull_policy: build
+    container_name: hometg-react
     ports:
       - "5235:3000"
-    networks:
-      - public
+    environment:
+      REACT_APP_API_URL: "http://hometg:80"
+      WDS_SOCKET_PORT: 0
     depends_on:
       - hometg
+    networks:
+      - public
+      - private
     restart: unless-stopped
 
-  # Remove this section if you want to use Sqlite instead.
-  # Word of warning: Sqlite is much slower when it comes to manipulating the DB.
   database:
-    image: 'postgres:16.3'
+    image: postgres:16.3
+    container_name: hometg-db
     ports:
-      - 5432:5432
+      - "5432:5432"
     environment:
       POSTGRES_USER: hometg
       POSTGRES_PASSWORD: supersecretpassword
       POSTGRES_DB: hometg_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - private
-    volumes:
-      - postgres-data:/var/lib/postgresql/data/
-    restart: "unless-stopped"
+    restart: unless-stopped
 
 networks:
   public:
+    driver: bridge
   private:
+    driver: bridge
 
 volumes:
   postgres-data:
